@@ -23,6 +23,9 @@ jwt:
   expiration: 900000 # 15 minutes
   refresh-expiration: 604800000 # 7 days
 
+session:
+  max-concurrent: 5 # Maximum concurrent sessions per user
+
 logging:
   level:
     com.htask: DEBUG

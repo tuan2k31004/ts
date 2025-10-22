@@ -5,6 +5,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import KanbanBoard from './pages/KanbanBoard';
+import Sessions from './pages/Sessions';
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
@@ -36,6 +37,14 @@ function App() {
           element={
             <PrivateRoute>
               <KanbanBoard />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/sessions"
+          element={
+            <PrivateRoute>
+              <Sessions />
             </PrivateRoute>
           }
         />

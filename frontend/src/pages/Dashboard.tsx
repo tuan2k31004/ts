@@ -68,6 +68,12 @@ export default function Dashboard() {
               Welcome, {user?.fullName}
             </span>
             <button
+              onClick={() => navigate('/sessions')}
+              className="text-sm text-blue-600 hover:text-blue-800"
+            >
+              Manage Sessions
+            </button>
+            <button
               onClick={logout}
               className="text-sm text-red-600 hover:text-red-800"
             >

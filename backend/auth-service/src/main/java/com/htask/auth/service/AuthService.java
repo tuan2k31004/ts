@@ -21,9 +21,10 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
     private final RefreshTokenService refreshTokenService;
+    private final LoginSessionService loginSessionService;
 
     @Transactional
-    public AuthResponse register(RegisterRequest request) {
+    public AuthResponse register(RegisterRequest request, String ipAddress, String userAgent) {
         if (userRepository.existsByUsername(request.getUsername())) {
             throw new BadRequestException("Username already exists");
         }
@@ -51,6 +52,9 @@ public class AuthService {
 
         String refreshToken = refreshTokenService.createRefreshToken(user.getId()).getToken();
 
+        // Create login session
+        loginSessionService.createSession(user.getId(), refreshToken, ipAddress, userAgent);
+
         return AuthResponse.builder()
                 .token(token)
                 .refreshToken(refreshToken)
@@ -62,7 +66,8 @@ public class AuthService {
                 .build();
     }
 
-    public AuthResponse login(LoginRequest request) {
+    @Transactional
+    public AuthResponse login(LoginRequest request, String ipAddress, String userAgent) {
         User user = userRepository.findByUsername(request.getUsername())
                 .orElseThrow(() -> new UnauthorizedException("Invalid credentials"));
 
@@ -82,6 +87,9 @@ public class AuthService {
 
         String refreshToken = refreshTokenService.createRefreshToken(user.getId()).getToken();
 
+        // Create login session
+        loginSessionService.createSession(user.getId(), refreshToken, ipAddress, userAgent);
+
         return AuthResponse.builder()
                 .token(token)
                 .refreshToken(refreshToken)
@@ -94,7 +102,7 @@ public class AuthService {
     }
 
     @Transactional
-    public AuthResponse refreshToken(String refreshToken) {
+    public AuthResponse refreshToken(String refreshToken, String ipAddress, String userAgent) {
         var token = refreshTokenService.verifyRefreshToken(refreshToken);
         User user = userRepository.findById(token.getUserId())
                 .orElseThrow(() -> new UnauthorizedException("User not found"));
@@ -109,11 +117,15 @@ public class AuthService {
                 user.getRole().name()
         );
 
-        // Optionally create a new refresh token (rotation strategy)
+        // Create a new refresh token (rotation strategy)
         String newRefreshToken = refreshTokenService.createRefreshToken(user.getId()).getToken();
 
-        // Revoke the old refresh token
+        // Revoke the old refresh token and session
         refreshTokenService.revokeRefreshToken(refreshToken);
+        loginSessionService.revokeSessionByRefreshToken(refreshToken);
+
+        // Create new session for the new refresh token
+        loginSessionService.createSession(user.getId(), newRefreshToken, ipAddress, userAgent);
 
         return AuthResponse.builder()
                 .token(newAccessToken)
@@ -129,6 +141,7 @@ public class AuthService {
     @Transactional
     public void logout(String refreshToken) {
         refreshTokenService.revokeRefreshToken(refreshToken);
+        loginSessionService.revokeSessionByRefreshToken(refreshToken);
     }
 
     public boolean validateToken(String token) {

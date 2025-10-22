@@ -76,6 +76,19 @@ export interface KanbanBoard {
   };
 }
 
+export interface LoginSession {
+  id: string;
+  deviceType: string;
+  browser: string;
+  operatingSystem: string;
+  ipAddress: string;
+  location?: string;
+  createdAt: string;
+  lastActivity: string;
+  expiresAt: string;
+  current: boolean;
+}
+
 export interface ApiResponse<T> {
   success: boolean;
   message: string;

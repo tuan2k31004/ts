@@ -6,6 +6,9 @@ hTask is a comprehensive project and task management platform built with a moder
 
 - **User Authentication & Authorization**: JWT-based secure authentication with refresh token rotation and role-based access control (Admin, Manager, Member)
 - **Refresh Token System**: Automatic token refresh with 15-minute access tokens and 7-day refresh tokens for enhanced security
+- **Session Management**: Track and manage active login sessions across multiple devices with device detection
+- **Multi-Device Support**: Users can be logged in on up to 5 devices simultaneously
+- **Device Recognition**: Automatic detection of device type, browser, operating system, and IP address
 - **Project Management**: Create, update, and manage projects with team member assignments
 - **Kanban Board**: Intuitive drag-and-drop interface for task management with multiple status columns (To Do, In Progress, In Review, Done)
 - **Task Management**: Create, assign, and track tasks with priorities, due dates, and descriptions
@@ -268,6 +271,57 @@ Response:
 {
   "success": true,
   "message": "Logged out successfully"
+}
+```
+
+### Session Management Endpoints
+
+#### Get Active Sessions
+```
+GET /api/auth/sessions?refreshToken={refreshToken}
+Authorization: Bearer {token}
+
+Response:
+{
+  "success": true,
+  "data": [
+    {
+      "id": "session-uuid",
+      "deviceType": "DESKTOP",
+      "browser": "Google Chrome",
+      "operatingSystem": "Windows 10/11",
+      "ipAddress": "192.168.1.1",
+      "location": null,
+      "createdAt": "2024-01-01T10:00:00",
+      "lastActivity": "2024-01-01T12:30:00",
+      "expiresAt": "2024-01-08T10:00:00",
+      "current": true
+    }
+  ]
+}
+```
+
+#### Revoke Specific Session
+```
+DELETE /api/auth/sessions/{sessionId}
+Authorization: Bearer {token}
+
+Response:
+{
+  "success": true,
+  "message": "Session revoked successfully"
+}
+```
+
+#### Revoke All Sessions
+```
+DELETE /api/auth/sessions
+Authorization: Bearer {token}
+
+Response:
+{
+  "success": true,
+  "message": "All sessions revoked successfully"
 }
 ```
 
