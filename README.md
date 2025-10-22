@@ -4,7 +4,8 @@ hTask is a comprehensive project and task management platform built with a moder
 
 ## Features
 
-- **User Authentication & Authorization**: JWT-based secure authentication with role-based access control (Admin, Manager, Member)
+- **User Authentication & Authorization**: JWT-based secure authentication with refresh token rotation and role-based access control (Admin, Manager, Member)
+- **Refresh Token System**: Automatic token refresh with 15-minute access tokens and 7-day refresh tokens for enhanced security
 - **Project Management**: Create, update, and manage projects with team member assignments
 - **Kanban Board**: Intuitive drag-and-drop interface for task management with multiple status columns (To Do, In Progress, In Review, Done)
 - **Task Management**: Create, assign, and track tasks with priorities, due dates, and descriptions
@@ -25,6 +26,7 @@ The backend is built with **Spring Boot** and follows a microservices pattern:
 
 2. **Auth Service** (Port 8081)
    - User authentication and JWT token generation
+   - Refresh token management with automatic rotation
    - Password encryption with BCrypt
    - User registration and login
 
@@ -218,12 +220,54 @@ Response:
   "message": "Login successful",
   "data": {
     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "550e8400-e29b-41d4-a716-446655440000",
     "userId": "uuid",
     "username": "john_doe",
     "email": "john@example.com",
     "fullName": "John Doe",
     "role": "MEMBER"
   }
+}
+```
+
+#### Refresh Token
+```
+POST /api/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "550e8400-e29b-41d4-a716-446655440000"
+}
+
+Response:
+{
+  "success": true,
+  "message": "Token refreshed successfully",
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "new-refresh-token-uuid",
+    "userId": "uuid",
+    "username": "john_doe",
+    "email": "john@example.com",
+    "fullName": "John Doe",
+    "role": "MEMBER"
+  }
+}
+```
+
+#### Logout
+```
+POST /api/auth/logout
+Content-Type: application/json
+
+{
+  "refreshToken": "550e8400-e29b-41d4-a716-446655440000"
+}
+
+Response:
+{
+  "success": true,
+  "message": "Logged out successfully"
 }
 ```
 
@@ -314,11 +358,15 @@ htask/
 
 ## Security
 
-- JWT tokens with 24-hour expiration
-- Password hashing with BCrypt
-- CORS configuration for secure cross-origin requests
-- Role-based access control (RBAC)
-- Stateless session management
+- **Access Tokens**: Short-lived JWT tokens with 15-minute expiration for enhanced security
+- **Refresh Tokens**: Long-lived tokens (7 days) stored securely for automatic token renewal
+- **Token Rotation**: Refresh tokens are rotated on each refresh to prevent token replay attacks
+- **Automatic Token Refresh**: Frontend automatically refreshes expired tokens without user intervention
+- **Password Hashing**: BCrypt with salt for secure password storage
+- **CORS Configuration**: Secure cross-origin requests with whitelist
+- **Role-based Access Control (RBAC)**: Fine-grained permissions for Admin, Manager, and Member roles
+- **Stateless Session Management**: JWT-based authentication without server-side sessions
+- **Scheduled Cleanup**: Expired refresh tokens are automatically cleaned up daily
 
 ## Development
 

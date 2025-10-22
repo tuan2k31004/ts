@@ -20,6 +20,7 @@ public class AuthService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtUtil jwtUtil;
+    private final RefreshTokenService refreshTokenService;
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
@@ -48,8 +49,11 @@ public class AuthService {
                 user.getRole().name()
         );
 
+        String refreshToken = refreshTokenService.createRefreshToken(user.getId()).getToken();
+
         return AuthResponse.builder()
                 .token(token)
+                .refreshToken(refreshToken)
                 .userId(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
@@ -76,14 +80,55 @@ public class AuthService {
                 user.getRole().name()
         );
 
+        String refreshToken = refreshTokenService.createRefreshToken(user.getId()).getToken();
+
         return AuthResponse.builder()
                 .token(token)
+                .refreshToken(refreshToken)
                 .userId(user.getId())
                 .username(user.getUsername())
                 .email(user.getEmail())
                 .fullName(user.getFullName())
                 .role(user.getRole().name())
                 .build();
+    }
+
+    @Transactional
+    public AuthResponse refreshToken(String refreshToken) {
+        var token = refreshTokenService.verifyRefreshToken(refreshToken);
+        User user = userRepository.findById(token.getUserId())
+                .orElseThrow(() -> new UnauthorizedException("User not found"));
+
+        if (!user.getActive()) {
+            throw new UnauthorizedException("Account is deactivated");
+        }
+
+        String newAccessToken = jwtUtil.generateToken(
+                user.getUsername(),
+                user.getId(),
+                user.getRole().name()
+        );
+
+        // Optionally create a new refresh token (rotation strategy)
+        String newRefreshToken = refreshTokenService.createRefreshToken(user.getId()).getToken();
+
+        // Revoke the old refresh token
+        refreshTokenService.revokeRefreshToken(refreshToken);
+
+        return AuthResponse.builder()
+                .token(newAccessToken)
+                .refreshToken(newRefreshToken)
+                .userId(user.getId())
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .fullName(user.getFullName())
+                .role(user.getRole().name())
+                .build();
+    }
+
+    @Transactional
+    public void logout(String refreshToken) {
+        refreshTokenService.revokeRefreshToken(refreshToken);
     }
 
     public boolean validateToken(String token) {

@@ -20,7 +20,8 @@ spring:
 
 jwt:
   secret: htask-super-secret-key-for-jwt-token-generation-minimum-256-bits
-  expiration: 86400000 # 24 hours
+  expiration: 900000 # 15 minutes
+  refresh-expiration: 604800000 # 7 days
 
 logging:
   level:

@@ -6,6 +6,7 @@ export const authService = {
     const response = await api.post<ApiResponse<AuthResponse>>('/api/auth/login', credentials);
     const authData = response.data.data;
     localStorage.setItem('token', authData.token);
+    localStorage.setItem('refreshToken', authData.refreshToken);
     localStorage.setItem('user', JSON.stringify(authData));
     return authData;
   },
@@ -14,12 +15,38 @@ export const authService = {
     const response = await api.post<ApiResponse<AuthResponse>>('/api/auth/register', data);
     const authData = response.data.data;
     localStorage.setItem('token', authData.token);
+    localStorage.setItem('refreshToken', authData.refreshToken);
     localStorage.setItem('user', JSON.stringify(authData));
     return authData;
   },
 
-  logout: () => {
+  refreshToken: async (): Promise<AuthResponse> => {
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (!refreshToken) {
+      throw new Error('No refresh token available');
+    }
+
+    const response = await api.post<ApiResponse<AuthResponse>>('/api/auth/refresh', {
+      refreshToken,
+    });
+    const authData = response.data.data;
+    localStorage.setItem('token', authData.token);
+    localStorage.setItem('refreshToken', authData.refreshToken);
+    localStorage.setItem('user', JSON.stringify(authData));
+    return authData;
+  },
+
+  logout: async () => {
+    const refreshToken = localStorage.getItem('refreshToken');
+    if (refreshToken) {
+      try {
+        await api.post('/api/auth/logout', { refreshToken });
+      } catch (error) {
+        console.error('Logout error:', error);
+      }
+    }
     localStorage.removeItem('token');
+    localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
   },
 
@@ -30,6 +57,10 @@ export const authService = {
 
   getToken: (): string | null => {
     return localStorage.getItem('token');
+  },
+
+  getRefreshToken: (): string | null => {
+    return localStorage.getItem('refreshToken');
   },
 
   isAuthenticated: (): boolean => {

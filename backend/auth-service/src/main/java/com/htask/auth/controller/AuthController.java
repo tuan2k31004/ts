@@ -3,6 +3,7 @@ package com.htask.auth.controller;
 import com.htask.auth.dto.AuthResponse;
 import com.htask.auth.dto.LoginRequest;
 import com.htask.auth.dto.RegisterRequest;
+import com.htask.auth.dto.TokenRefreshRequest;
 import com.htask.auth.service.AuthService;
 import com.htask.common.dto.ApiResponse;
 import jakarta.validation.Valid;
@@ -41,5 +42,17 @@ public class AuthController {
     public ResponseEntity<ApiResponse<String>> extractUsername(@RequestParam String token) {
         String username = authService.extractUsername(token);
         return ResponseEntity.ok(ApiResponse.success(username));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<ApiResponse<AuthResponse>> refreshToken(@Valid @RequestBody TokenRefreshRequest request) {
+        AuthResponse response = authService.refreshToken(request.getRefreshToken());
+        return ResponseEntity.ok(ApiResponse.success("Token refreshed successfully", response));
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<Void>> logout(@Valid @RequestBody TokenRefreshRequest request) {
+        authService.logout(request.getRefreshToken());
+        return ResponseEntity.ok(ApiResponse.success("Logged out successfully", null));
     }
 }
